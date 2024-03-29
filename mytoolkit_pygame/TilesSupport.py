@@ -1,4 +1,4 @@
-import pygame
+import pygame,globals
 from sys import path
 path.append("resources")
 from resources import levels as lvls
@@ -28,10 +28,9 @@ class tile(pygame.sprite.Sprite):
         self.tile_type = tile_type
         self.rect = self.image.get_frect(topleft=pos)
         self.mask = pygame.mask.from_surface(self.image)
-
         # position in level array
-
         self.level_x,self.level_y = x,y
+        self.frame = frame
     def update(self,direction):
 
         #camera
@@ -69,10 +68,10 @@ class buttons ():
 
 
 class TILE_SUPPORT():
-    def __init__(self):
+    def __init__(self,game):
         self.group = pygame.sprite.Group()
-        
-        self.world_layer = lvls.current_level
+        self.game = game
+        self.world_layer = lvls.all_levels[globals.Current_level]
 
         self.set_world()
         self.sieve_tiles()
@@ -81,11 +80,12 @@ class TILE_SUPPORT():
     def set_world(self):
         size = 16
         self.array_tiles(self.world_layer[0],size,"physics","resources/prototype.png")
-        self.array_tiles(self.world_layer[1],size,"goups","resources/prototype.png")
+        self.array_tiles(self.world_layer[1],size,"levelchangers","resources/prototype.png")
 
     def sieve_tiles(self):
         self.PHYSICS_TILES = self.tile_sieve("physics")
-        self.GOUPS = self.tile_sieve("goups")
+        self.GOUPS = self.tile_sieve(1)
+        self.GODOWNS = self.tile_sieve(2)
 
     # used to spawn array maps
         
@@ -102,46 +102,54 @@ class TILE_SUPPORT():
     def tile_sieve(self,sprite_type):
         hit_list = []
         for sprite in self.group.sprites():
-            if sprite.tile_type == sprite_type:
-                hit_list.append(sprite.rect)
+            if type(sprite_type) == str:
+                if sprite.tile_type == sprite_type:
+                    hit_list.append(sprite.rect)
+            if type(sprite_type) == int:
+                if sprite.frame == sprite_type:
+                    hit_list.append(sprite.rect)
+
         return hit_list
     
     # special tiles  collision and reactions
-    def special_collision(self,player):
+    def special_collision(self):
         for rect in self.GOUPS:
-            if rect.colliderect(player.rect):
-                print("GOOOOO UP")
-    def platformer_physics(self,player):
-        player.applygravity()
+            if rect.colliderect(self.game.player.rect):
+                globals.Current_level+=1
+                self.game.running = False
+        for rect in self.GODOWNS:
+            if rect.colliderect(self.game.player.rect):
+                globals.Current_level+=-1
+                self.game.running = False
+    def platformer_physics(self):
+        self.game.player.applygravity()
         for rect in self.PHYSICS_TILES:
-            if rect.colliderect(player.rect):
-                if player.direction.y > 0: 
-                    player.rect.bottom = rect.top
-                    player.direction.y = 0
-                    player.on_ground = True
-                elif player.direction.y < 0:
-                    player.rect.top = rect.bottom
-                    player.direction.y = 0
-        if player.direction.y > 1 or player.direction.y < 0:
-            player.on_ground = False
+            if rect.colliderect(self.game.player.rect):
+                if self.game.player.direction.y > 0: 
+                    self.game.player.rect.bottom = rect.top
+                    self.game.player.direction.y = 0
+                    self.game.player.on_ground = True
+                elif self.game.player.direction.y < 0:
+                    self.game.player.rect.top = rect.bottom
+                    self.game.player.direction.y = 0
+        if self.game.player.direction.y > 1 or self.game.player.direction.y < 0:
+            self.game.player.on_ground = False
 
-        player.rect.x += player.direction.x * player.speedx
+        self.game.player.rect.x += self.game.player.direction.x * self.game.player.speedx
 
         for rect in self.PHYSICS_TILES:
-            if rect.colliderect(player.rect):
-                if player.direction.x < 0: 
-                    player.rect.left = rect.right
-                elif player.direction.x > 0:
-                    player.rect.right = rect.left
+            if rect.colliderect(self.game.player.rect):
+                if self.game.player.direction.x < 0: 
+                    self.game.player.rect.left = rect.right
+                elif self.game.player.direction.x > 0:
+                    self.game.player.rect.right = rect.left
         # there is supposed to be ramp collision water collisions and whatnots but ill not have them this jam i guess
 
-        return player.rect
-
-    def update(self,playerIN,scroll,screen):
+    def update(self,scroll,screen):
         self.group.update(scroll)
         self.group.draw(screen)
-        playerIN.rect = self.platformer_physics(playerIN)
+        self.platformer_physics()
 
         # special tiles
-        self.special_collision(playerIN)
+        self.special_collision()
         

@@ -12,6 +12,6 @@ def run(screen,state_runs):
                 sys.exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_w:
-                    state_runs['game'](screen,state_runs)
+                    state_runs['lvlchange'](screen,state_runs)
 
         pygame.display.flip()

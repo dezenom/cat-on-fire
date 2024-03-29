@@ -7,6 +7,9 @@ from player import player
 
 class GAME():
     def __init__(self,display):
+
+        self.running = True
+
         # screen
         self.screen = display
         self.screen_w,self.screen_h = WIDTH,HEIGHT
@@ -16,7 +19,7 @@ class GAME():
         self.camera_entities = []
 
         # level/world
-        self.TileManager = TILE_SUPPORT()
+        self.TileManager = TILE_SUPPORT(self)
 
         self.player = player((30,30),self.screen)
         self.camera_entities.append(self.player.rect)
@@ -54,7 +57,7 @@ class GAME():
     
     def spritecontrol(self):
         self.camera()
-        self.TileManager.update(self.player,self.scroll,self.screen)
+        self.TileManager.update(self.scroll,self.screen)
         self.player.update()
         
 

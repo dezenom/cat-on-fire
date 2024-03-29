@@ -5,7 +5,7 @@ def run(screen,state_runs):
     game = GAME(screen)
     clock = pygame.time.Clock()
 
-    while True:
+    while game.running:
         screen.fill((255, 180, 80))
         clock.tick(60)
         game.run()
