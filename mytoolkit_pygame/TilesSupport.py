@@ -3,6 +3,8 @@ from sys import path
 path.append("resources")
 from resources import levels as lvls
 
+#### utils #####
+
 
 def get_image(size,image_source,frame):
     image = pygame.Surface((size,size))
@@ -10,13 +12,11 @@ def get_image(size,image_source,frame):
     image.set_colorkey((0,0,0))
 
     return image
-
 def render_text(screen,text,pos,fonts,size):
     font = pygame.font.Font(fonts,size)
     text = font.render(text,False,(50,50,50))
     rect = text.get_rect(center = pos)
     screen.blit(text,rect)
-
 class tile(pygame.sprite.Sprite):
     def __init__(self,pos,imagesource,group,tile_type,frame,x,y):
         super().__init__(group)
@@ -28,6 +28,7 @@ class tile(pygame.sprite.Sprite):
         self.tile_type = tile_type
         self.rect = self.image.get_frect(topleft=pos)
         self.mask = pygame.mask.from_surface(self.image)
+        
         # position in level array
         self.level_x,self.level_y = x,y
         self.frame = frame
@@ -37,8 +38,6 @@ class tile(pygame.sprite.Sprite):
 
         self.rect.x -= direction[0]
         self.rect.y -= direction[1]
-
-
 class buttons ():
     def __init__(self,pos,screen,scale,imagepath,font) :
         self.screen = screen
@@ -67,6 +66,12 @@ class buttons ():
         self.render_text(text,(self.rect.centerx,self.rect.centery),10)
 
 
+
+
+#### tilemanager #####
+        
+
+
 class TILE_SUPPORT():
     def __init__(self,game):
         self.group = pygame.sprite.Group()
@@ -79,11 +84,10 @@ class TILE_SUPPORT():
     
     def set_world(self):
         size = 16
-        self.array_tiles(self.world_layer[0],size,"physics","resources/prototype.png")
-        self.array_tiles(self.world_layer[1],size,"levelchangers","resources/prototype.png")
+        self.array_tiles(self.world_layer,size,"All","resources/prototype.png")
 
     def sieve_tiles(self):
-        self.PHYSICS_TILES = self.tile_sieve("physics")
+        self.PHYSICS_TILES = self.tile_sieve(0)
         self.GOUPS = self.tile_sieve(1)
         self.GODOWNS = self.tile_sieve(2)
 
@@ -117,10 +121,19 @@ class TILE_SUPPORT():
             if rect.colliderect(self.game.player.rect):
                 globals.Current_level+=1
                 self.game.running = False
+                break
         for rect in self.GODOWNS:
             if rect.colliderect(self.game.player.rect):
                 globals.Current_level+=-1
                 self.game.running = False
+                break
+        
+        # burnables
+        for sprite in self.group.sprites():
+            if sprite.frame == 3:
+                if sprite.rect.colliderect(self.game.player.rect):
+                    globals.cool_on = True
+
     def platformer_physics(self):
         self.game.player.applygravity()
         for rect in self.PHYSICS_TILES:

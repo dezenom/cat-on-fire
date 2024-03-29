@@ -18,11 +18,12 @@ class GAME():
         self.scroll = (0,0)
         self.camera_entities = []
 
+        self.player = player((30,30),self.screen)
+        self.camera_entities.append(self.player.rect)
+        
         # level/world
         self.TileManager = TILE_SUPPORT(self)
 
-        self.player = player((30,30),self.screen)
-        self.camera_entities.append(self.player.rect)
 
 
 #camera  

@@ -1,10 +1,9 @@
-import pygame,math
-# from support.particles import particle_system
-# from support.save_load_support import save_loadsystem
+import pygame,globals
+from particles import particle_system
+from random import randint
 
-# save_system = save_loadsystem('.save','data')
-
-# particle1 = particle_system()
+jump_particles = particle_system()
+fire_particles = particle_system()
 
 class player():
     def __init__(self,pos,screen):
@@ -16,7 +15,7 @@ class player():
         self.direction = pygame.Vector2((1,0))
         self.friction = 0.6
         self.speedx = 0
-        self.speedy = -10
+        self.speedy = -13
         self.maxspeed = 5
         self.acceleration = 0.8
 
@@ -41,7 +40,7 @@ class player():
             self.on_ground = False
             self.jumpcount += 1
             self.direction.y = 0
-            self.jumping(5,self.speedy,40)
+            self.jumping()
         self.jump = False
         if keys[pygame.K_a] and self.speedx < self.maxspeed:
             self.direction.x = -1
@@ -59,12 +58,18 @@ class player():
         self.direction.y += self.gravity if self.direction.y < 30 else 0 
         self.rect.y += self.direction.y 
 
-    def jumping(self,repeat,vel,offset):
-        self.direction.y = vel
+    def jumping(self):
+        if self.jumpcount == 2:
+            for i in range(5):
+                jump_particles.add_particle([self.rect.x + self.rect.w/2,self.rect.y + self.rect.h],8,(50*i,150,200))
+        self.direction.y = self.speedy
         self.rect.y += self.direction.y
     def movement(self):
         if self.on_ground:
             self.jumpcount = 0
+
+        self.jumpmax = 2 if self.speedx >= self.maxspeed -2 and globals.cool_on else 1
+        
         self.steps += self.speedx
         self.keys()
         self.applyfriction()
@@ -78,7 +83,16 @@ class player():
                 self.status = 'idle'
             else:
                 self.status = 'run'
-    # update
-    def update(self):
+    # draw and update
+                
+    def flame(self):
+        fire_particles.add_particle([self.rect.x+ self.rect.w/2,self.rect.y-10],5,(randint(1,255),40*self.speedx,50*self.speedx))
+
+    def draw(self):
         self.screen.blit(self.image,self.rect)
+        jump_particles.emit(self.screen,1,-2,3)
+        fire_particles.emit(self.screen,-1,-3,3)
+    def update(self):
         self.movement()
+        self.flame()
+        self.draw()

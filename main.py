@@ -10,6 +10,5 @@ pygame.init()
 screen = pygame.display.set_mode((WIDTH,HEIGHT),pygame.SCALED)
 
 state_runs = {"menu":menu.run,"lvlchange":lvlchange.run ,"game":game.run}
-state_stack = []
 
 state_runs['menu'](screen,state_runs)
