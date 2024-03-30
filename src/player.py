@@ -1,33 +1,35 @@
 import pygame,globals
 from particles import particle_system
 from random import randint
+from mytoolkit_pygame.AnimationHandler import ANIMATION_HANDLER
 
 jump_particles = particle_system()
 fire_particles = particle_system()
 
+player_animations = ANIMATION_HANDLER(1,"resources/Animations/idle/spritesheet.png",[24,20]) 
+
 class player():
     def __init__(self,pos,screen):
         self.screen = screen
-        self.image = pygame.Surface((12,16))
+        self.image = pygame.Surface((24,20))
         self.rect = self.image.get_rect(topleft = pos)
         self.mask = pygame.mask.from_surface(self.image)
         # movement
         self.direction = pygame.Vector2((1,0))
         self.friction = 0.6
         self.speedx = 0
-        self.speedy = -13
+        self.speedy = -8
         self.maxspeed = 5
         self.acceleration = 0.8
 
         # jump
-        self.gravity = 0.8
+        self.gravity = 0.4
         self.on_ground = False
         self.jump = False
         self.jumpcount = 2
         self.jumpmax = 2
         # animation
-        self.frames = {"idle":[],"run":[],"jump":[],"fall":[]}
-        self.status = "idle"
+        self.get_status()
         self.is_left = False
         # checkpoints
         self.steps = 0
@@ -75,24 +77,25 @@ class player():
         self.applyfriction()
     def get_status(self):
         if self.direction.y <0:
-            self.status = 'jump'
-        elif self.direction.y>1:
-            self.status = 'fall'
+            self.status = 2
+        elif self.direction.y>0.8:
+            self.status = 3
         else:
             if self.speedx <= 0.2:
-                self.status = 'idle'
+                self.status = 0
             else:
-                self.status = 'run'
+                self.status = 1
     # draw and update
                 
-    def flame(self):
-        fire_particles.add_particle([self.rect.x+ self.rect.w/2,self.rect.y-10],5,(randint(1,255),40*self.speedx,50*self.speedx))
+    def render_controls(self):
+        self.get_status()
 
-    def draw(self):
+
+    def render(self):
+        jump_particles.emit(self.screen,3,-2,3)
+        fire_particles.emit(self.screen,-1,-1,1)
         self.screen.blit(self.image,self.rect)
-        jump_particles.emit(self.screen,1,-2,3)
-        fire_particles.emit(self.screen,-1,-3,3)
     def update(self):
+        self.image = player_animations.animation(self.status,self.is_left)
         self.movement()
-        self.flame()
-        self.draw()
+        self.render_controls()

@@ -56,12 +56,12 @@ class GAME():
 
 # sprites
     
-    def spritecontrol(self):
+    def render(self):
         self.camera()
-        self.TileManager.update(self.scroll,self.screen)
-        self.player.update()
-        
+        self.TileManager.render(self.screen)
+        self.player.render()
 
-    def run(self):
+    def update(self):
         self.event_handler()
-        self.spritecontrol()
+        self.player.update()
+        self.TileManager.update(self.scroll)

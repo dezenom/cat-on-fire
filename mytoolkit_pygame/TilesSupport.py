@@ -6,9 +6,9 @@ from resources import levels as lvls
 #### utils #####
 
 
-def get_image(size,image_source,frame):
-    image = pygame.Surface((size,size))
-    image.blit(pygame.image.load(image_source),(frame*-size,0,size,size))
+def get_image(image_source,framex,size=[16,16],layery=0):
+    image = pygame.Surface((size[0],size[1]))
+    image.blit(pygame.image.load(image_source),(framex*-size[0],layery*-size[1],size[0],size[1]))
     image.set_colorkey((0,0,0))
 
     return image
@@ -18,20 +18,20 @@ def render_text(screen,text,pos,fonts,size):
     rect = text.get_rect(center = pos)
     screen.blit(text,rect)
 class tile(pygame.sprite.Sprite):
-    def __init__(self,pos,imagesource,group,tile_type,frame,x,y):
+    def __init__(self,pos,imagesource,group,tile_type,framex,x,y):
         super().__init__(group)
 
         # image , tile type and rect 
         # with tile type all tiles can be in one group , is that optimal, absolutely not 
 
-        self.image = get_image(16,imagesource,frame)
+        self.image = get_image(imagesource,framex)
         self.tile_type = tile_type
         self.rect = self.image.get_frect(topleft=pos)
         self.mask = pygame.mask.from_surface(self.image)
         
         # position in level array
         self.level_x,self.level_y = x,y
-        self.frame = frame
+        self.frame = framex
     def update(self,direction):
 
         #camera
@@ -145,7 +145,7 @@ class TILE_SUPPORT():
                 elif self.game.player.direction.y < 0:
                     self.game.player.rect.top = rect.bottom
                     self.game.player.direction.y = 0
-        if self.game.player.direction.y > 1 or self.game.player.direction.y < 0:
+        if self.game.player.direction.y > self.game.player.gravity or self.game.player.direction.y < 0:
             self.game.player.on_ground = False
 
         self.game.player.rect.x += self.game.player.direction.x * self.game.player.speedx
@@ -158,11 +158,13 @@ class TILE_SUPPORT():
                     self.game.player.rect.right = rect.left
         # there is supposed to be ramp collision water collisions and whatnots but ill not have them this jam i guess
 
-    def update(self,scroll,screen):
-        self.group.update(scroll)
-        self.group.draw(screen)
-        self.platformer_physics()
 
-        # special tiles
+    def render(self,screen):
+        self.group.draw(screen)
+
+
+    def update(self,scroll):
+        self.group.update(scroll)
+        self.platformer_physics()
         self.special_collision()
         
