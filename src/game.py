@@ -35,8 +35,8 @@ class GAME():
         return scroll
     def camera(self):
         self.scroll = self.getscroll()
-        self.scroll[0] = self.scroll[0]//10
-        self.scroll[1] = self.scroll[1]//10
+        self.scroll[0] = self.scroll[0]//25
+        self.scroll[1] = self.scroll[1]//5
         for rect in self.camera_entities:
             rect.x -= self.scroll[0]
             rect.y -= self.scroll[1]
@@ -57,11 +57,11 @@ class GAME():
 # sprites
     
     def render(self):
-        self.camera()
         self.TileManager.render(self.screen)
         self.player.render()
 
     def update(self):
         self.event_handler()
+        self.camera()
         self.player.update()
         self.TileManager.update(self.scroll)

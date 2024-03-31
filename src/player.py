@@ -1,12 +1,13 @@
-import pygame,globals
+import pygame
 from particles import particle_system
 from random import randint
 from mytoolkit_pygame.AnimationHandler import ANIMATION_HANDLER
+from globals import radio
 
 jump_particles = particle_system()
 fire_particles = particle_system()
 
-player_animations = ANIMATION_HANDLER(1,"resources/Animations/idle/spritesheet.png",[24,20]) 
+player_animations = ANIMATION_HANDLER(1,"resources/Animations/spritesheet.png",[24,20]) 
 
 class player():
     def __init__(self,pos,screen):
@@ -42,6 +43,7 @@ class player():
             self.on_ground = False
             self.jumpcount += 1
             self.direction.y = 0
+            radio.play_effect("jump")
             self.jumping()
         self.jump = False
         if keys[pygame.K_a] and self.speedx < self.maxspeed:
@@ -69,8 +71,6 @@ class player():
     def movement(self):
         if self.on_ground:
             self.jumpcount = 0
-
-        self.jumpmax = 2 if self.speedx >= self.maxspeed -2 and globals.cool_on else 1
         
         self.steps += self.speedx
         self.keys()
@@ -93,7 +93,6 @@ class player():
 
     def render(self):
         jump_particles.emit(self.screen,3,-2,3)
-        fire_particles.emit(self.screen,-1,-1,1)
         self.screen.blit(self.image,self.rect)
     def update(self):
         self.image = player_animations.animation(self.status,self.is_left)

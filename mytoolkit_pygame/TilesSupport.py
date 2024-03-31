@@ -1,14 +1,21 @@
 import pygame,globals
 from sys import path
 path.append("resources")
-from resources import levels as lvls
+from resources.levels import levels
+from settings import WIDTH,HEIGHT
 
 #### utils #####
 
 
 def get_image(image_source,framex,size=[16,16],layery=0):
+    fullimage = pygame.image.load(image_source)
     image = pygame.Surface((size[0],size[1]))
-    image.blit(pygame.image.load(image_source),(framex*-size[0],layery*-size[1],size[0],size[1]))
+    lengthx = fullimage.get_width()/size[0] -1
+    if framex > lengthx :
+        layery += int(framex//lengthx)
+        framex = int(framex%lengthx)-layery
+
+    image.blit(fullimage,(framex*-size[0],layery*-size[1],size[0],size[1]))
     image.set_colorkey((0,0,0))
 
     return image
@@ -27,11 +34,13 @@ class tile(pygame.sprite.Sprite):
         self.image = get_image(imagesource,framex)
         self.tile_type = tile_type
         self.rect = self.image.get_frect(topleft=pos)
-        self.mask = pygame.mask.from_surface(self.image)
         
         # position in level array
         self.level_x,self.level_y = x,y
         self.frame = framex
+
+    def draw(self,screen):
+        screen.blit(self.image,self.rect)   
     def update(self,direction):
 
         #camera
@@ -51,6 +60,7 @@ class buttons ():
         text = font.render(text,False,(50,50,50))
         rect = text.get_rect(center = pos)
         self.screen.blit(text,rect)
+
 
     def update(self,text):
         # check mouse collision
@@ -76,20 +86,25 @@ class TILE_SUPPORT():
     def __init__(self,game):
         self.group = pygame.sprite.Group()
         self.game = game
-        self.world_layer = lvls.all_levels[globals.Current_level]
+        self.world_layer = levels(globals.Current_level)
 
         self.set_world()
         self.sieve_tiles()
+        for rect in self.sieved_tiles["playerpos"]:
+            self.game.player.rect.x = rect.x
+            self.game.player.rect.y = rect.y
         
     
     def set_world(self):
         size = 16
-        self.array_tiles(self.world_layer,size,"All","resources/prototype.png")
+        for key in self.world_layer.keys():
+            self.array_tiles(self.world_layer[key][0],self.world_layer[key][1],key,self.world_layer[key][2])
 
     def sieve_tiles(self):
-        self.PHYSICS_TILES = self.tile_sieve(0)
-        self.GOUPS = self.tile_sieve(1)
-        self.GODOWNS = self.tile_sieve(2)
+        self.sieved_tiles = {}
+        for key in self.world_layer.keys():
+            self.sieved_tiles[key] = self.tile_sieve(key)
+
 
     # used to spawn array maps
         
@@ -106,23 +121,18 @@ class TILE_SUPPORT():
     def tile_sieve(self,sprite_type):
         hit_list = []
         for sprite in self.group.sprites():
-            if type(sprite_type) == str:
-                if sprite.tile_type == sprite_type:
-                    hit_list.append(sprite.rect)
-            if type(sprite_type) == int:
-                if sprite.frame == sprite_type:
-                    hit_list.append(sprite.rect)
-
+            if sprite.tile_type == sprite_type:
+                hit_list.append(sprite.rect)
         return hit_list
     
     # special tiles  collision and reactions
     def special_collision(self):
-        for rect in self.GOUPS:
+        for rect in self.sieved_tiles["GOUPS"]:
             if rect.colliderect(self.game.player.rect):
                 globals.Current_level+=1
                 self.game.running = False
                 break
-        for rect in self.GODOWNS:
+        for rect in self.sieved_tiles["GODOWNS"]:
             if rect.colliderect(self.game.player.rect):
                 globals.Current_level+=-1
                 self.game.running = False
@@ -136,7 +146,7 @@ class TILE_SUPPORT():
 
     def platformer_physics(self):
         self.game.player.applygravity()
-        for rect in self.PHYSICS_TILES:
+        for rect in self.sieved_tiles["physics"]:
             if rect.colliderect(self.game.player.rect):
                 if self.game.player.direction.y > 0: 
                     self.game.player.rect.bottom = rect.top
@@ -150,7 +160,7 @@ class TILE_SUPPORT():
 
         self.game.player.rect.x += self.game.player.direction.x * self.game.player.speedx
 
-        for rect in self.PHYSICS_TILES:
+        for rect in self.sieved_tiles["physics"]:
             if rect.colliderect(self.game.player.rect):
                 if self.game.player.direction.x < 0: 
                     self.game.player.rect.left = rect.right
@@ -160,7 +170,9 @@ class TILE_SUPPORT():
 
 
     def render(self,screen):
-        self.group.draw(screen)
+        for sprite in self.group.sprites():
+            if (sprite.rect.x>-16 and sprite.rect.x<WIDTH+16) and (sprite.rect.y>-16 and sprite.rect.y<HEIGHT+16) :
+                sprite.draw(screen)
 
 
     def update(self,scroll):
