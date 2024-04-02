@@ -14,6 +14,7 @@ class GAME():
         self.screen = display
         self.screen_w,self.screen_h = WIDTH,HEIGHT
 
+
         # basic scroll camera 
         self.scroll = (0,0)
         self.camera_entities = []
@@ -63,5 +64,6 @@ class GAME():
     def update(self):
         self.event_handler()
         self.camera()
+
         self.player.update()
         self.TileManager.update(self.scroll)

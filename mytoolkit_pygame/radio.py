@@ -9,7 +9,7 @@ class Radio():
         self.MUSICchannel = pygame.mixer.Channel(0)
         self.MUSICchannel.set_volume(0.1)
         self.EFECTSchannel = pygame.mixer.Channel(1)
-        self.EFECTSchannel.set_volume(0.6)
+        self.EFECTSchannel.set_volume(0.2)
 
         self.current_time = time()
         self.start_time = self.current_time

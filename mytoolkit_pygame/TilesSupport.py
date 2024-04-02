@@ -3,7 +3,6 @@ from sys import path
 path.append("resources")
 from resources.levels import levels
 from settings import WIDTH,HEIGHT
-
 #### utils #####
 
 
@@ -24,14 +23,14 @@ def render_text(screen,text,pos,fonts,size):
     text = font.render(text,False,(50,50,50))
     rect = text.get_rect(center = pos)
     screen.blit(text,rect)
-class tile(pygame.sprite.Sprite):
-    def __init__(self,pos,imagesource,group,tile_type,framex,x,y):
+class Tile(pygame.sprite.Sprite):
+    def __init__(self,pos,imagesource,group,tile_type,framex,x= None,y = None,size= [16,16],scale = 1):
         super().__init__(group)
 
         # image , tile type and rect 
         # with tile type all tiles can be in one group , is that optimal, absolutely not 
 
-        self.image = get_image(imagesource,framex)
+        self.image = pygame.transform.scale_by(get_image(imagesource,framex,size = size),scale)
         self.tile_type = tile_type
         self.rect = self.image.get_frect(topleft=pos)
         
@@ -47,34 +46,31 @@ class tile(pygame.sprite.Sprite):
 
         self.rect.x -= direction[0]
         self.rect.y -= direction[1]
-class buttons ():
-    def __init__(self,pos,screen,scale,imagepath,font) :
+class Buttons ():
+    def __init__(self,pos,screen,scale,imagesource) :
         self.screen = screen
-        image = pygame.image.load(imagepath).convert_alpha()
-        self.image = pygame.transform.scale(image,scale)
-        self.rect = self.image.get_frect(topleft = pos)
+        self.playimage, self.exitimage = pygame.transform.scale_by(get_image(imagesource,5,size=[40,30]),scale),pygame.transform.scale_by(get_image(imagesource,6,size=[40,30]),scale)
+        self.playrect, self.exitrect = self.playimage.get_frect(center = pos[0]),self.playimage.get_frect(center = pos[1])
         self.collide = False
-        self.font = font
-    def render_text(self,text,pos,size):
-        font = pygame.font.Font(self.font,size)
-        text = font.render(text,False,(50,50,50))
-        rect = text.get_rect(center = pos)
-        self.screen.blit(text,rect)
+
+    def render(self):
+        
+        self.screen.blit(self.playimage,self.playrect)
+        self.screen.blit(self.exitimage,self.exitrect)
 
 
-    def update(self,text):
+    def update(self,click):
         # check mouse collision
 
-        if self.rect.collidepoint(pygame.mouse.get_pos()):
-            self.collide = True
-        else:
-            self.collide = False
-    
-        # drawing text if there and button
-    
-        self.screen.blit(self.image,self.rect)
-        self.render_text(text,(self.rect.centerx,self.rect.centery),10)
-
+        if self.playrect.collidepoint(pygame.mouse.get_pos()):
+            if click:
+                return "play"
+            else: return ""
+        if self.exitrect.collidepoint(pygame.mouse.get_pos()):
+            if click:
+                return "exit"
+            else :return ""
+        return ""
 
 
 
@@ -83,7 +79,7 @@ class buttons ():
 
 
 class TILE_SUPPORT():
-    def __init__(self,game):
+    def __init__(self,game) :
         self.group = pygame.sprite.Group()
         self.game = game
         self.world_layer = levels(globals.Current_level)
@@ -93,12 +89,14 @@ class TILE_SUPPORT():
         for rect in self.sieved_tiles["playerpos"]:
             self.game.player.rect.x = rect.x
             self.game.player.rect.y = rect.y
+            self.game.player.checkpoint =  self.game.player.rect 
+
         
     
     def set_world(self):
         size = 16
         for key in self.world_layer.keys():
-            self.array_tiles(self.world_layer[key][0],self.world_layer[key][1],key,self.world_layer[key][2])
+            self.array_tiles(self.world_layer[key][0],key,self.world_layer[key][1])
 
     def sieve_tiles(self):
         self.sieved_tiles = {}
@@ -108,13 +106,13 @@ class TILE_SUPPORT():
 
     # used to spawn array maps
         
-    def array_tiles(self,Array,size,tile_type,imagesource):
+    def array_tiles(self,Array,tile_type,imagesource,size = [16,16]):
         for row_index,row in enumerate(Array):
             for col_index,col in enumerate(row):
-                y = row_index * size
-                x = col_index * size
+                y = row_index * size[0]
+                x = col_index * size[1]
                 if col>-1:
-                    tiles = tile((x,y),imagesource,self.group,tile_type,col,col_index,row_index)
+                    tiles = Tile((x,y),imagesource,self.group,tile_type,col,col_index,row_index,size = size)
 
     # collision checker / returns a list of every hit object in the group
     
@@ -151,6 +149,7 @@ class TILE_SUPPORT():
                 if self.game.player.direction.y > 0: 
                     self.game.player.rect.bottom = rect.top
                     self.game.player.direction.y = 0
+                    
                     self.game.player.on_ground = True
                 elif self.game.player.direction.y < 0:
                     self.game.player.rect.top = rect.bottom
@@ -176,6 +175,11 @@ class TILE_SUPPORT():
 
 
     def update(self,scroll):
+
+        for rect in self.sieved_tiles["playerpos"]:
+            if self.game.player.rect.y - rect.y > HEIGHT*2:
+                self.game.running = False
+
         self.group.update(scroll)
         self.platformer_physics()
         self.special_collision()

@@ -32,9 +32,6 @@ class player():
         # animation
         self.get_status()
         self.is_left = False
-        # checkpoints
-        self.steps = 0
-        self.maxsteps = 1000
 
     # player movement
     def keys(self):
@@ -70,9 +67,11 @@ class player():
         self.rect.y += self.direction.y
     def movement(self):
         if self.on_ground:
+            if self.jumpcount>0:
+                radio.play_effect("hit")
             self.jumpcount = 0
+
         
-        self.steps += self.speedx
         self.keys()
         self.applyfriction()
     def get_status(self):
